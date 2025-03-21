@@ -1,6 +1,6 @@
 const defaults = {};
-defaults.rowSize = 80;
-defaults.colSize = 80;
+defaults.rowSize = 60;
+defaults.colSize = 60;
 defaults.mapCenter = [
     Math.floor(defaults.colSize / 2),
     Math.floor(defaults.rowSize / 2),
@@ -27,6 +27,7 @@ colSize = defaults.colSize;
 playerPos = defaults.playerPos;
 
 let board = [];
+
 generateBoard();
 drawBoard();
 
@@ -68,11 +69,13 @@ function generateBoard() {
             let tempExitPos = pickExit(tempExitDir, lastValidRoom);
             let tempPaths = [];
 
-            tempPaths.push(tempExitPos); // path 0
-            let numOfPaths = getRandomInt(7, 12); //min 3
+            let numOfPaths = getRandomInt(3, 7); //min 3
             //create path
             for (let pathNum = 1; pathNum < numOfPaths; pathNum++) {
                 if (pathNum === 1) {
+                    tempPaths.push(tempExitPos); // path 0
+                    b[tempExitPos[0]][tempExitPos[1]] = pathChar;
+
                     let leavingPathPos = [];
                     if (tempExitDir === 0)
                         leavingPathPos = [tempExitPos[0] - 1, tempExitPos[1]];
@@ -85,8 +88,8 @@ function generateBoard() {
 
                     if (b[leavingPathPos[0]][leavingPathPos[1]] === blankChar) {
                         tempPaths.push(leavingPathPos);
+                        b[leavingPathPos[0]][leavingPathPos[1]] = pathChar;
                     } else {
-                        tempPaths = [];
                         pathNum = 999;
                     }
                 } else {
@@ -94,23 +97,21 @@ function generateBoard() {
                         charPosNearby(b, tempPaths[pathNum - 1], blankChar)
                     );
 
-                    for (let path = 0; path < tempPaths.length; path++) {
-                        let pathPos = [tempPaths[path][0], tempPaths[path][1]];
-                        blankCharPosNearby = blankCharPosNearby.filter(
-                            (elm) =>
-                                pathPos[0] !== elm[0] || pathPos[1] !== elm[1]
-                        );
-                    }
                     if (blankCharPosNearby.length > 0) {
-                        tempPaths.push(
+                        let newPath =
                             blankCharPosNearby[
                                 getRandomInt(0, blankCharPosNearby.length - 1)
-                            ]
-                        );
+                            ];
+                        tempPaths.push(newPath);
+                        b[newPath[0]][newPath[1]] = pathChar;
                     } else {
-                        tempPaths = [];
                         pathNum = 999;
                     }
+                }
+
+                if (pathNum === 999) {
+                    resetPaths(tempPaths);
+                    tempPaths = [];
                 }
             }
 
@@ -160,31 +161,18 @@ function generateBoard() {
                         else tempRoom[0][0] -= roomSizeOut;
                     }
 
-                    if (isRoomValid(tempRoom, tempPaths)) {
+                    if (isRoomValid(tempRoom, newEntrancePos)) {
                         attemtBuildRoom = false;
                         placeRoom(tempRoom);
-
-                        for (
-                            let pathNum = 0;
-                            pathNum < tempPaths.length;
-                            pathNum++
-                        ) {
-                            if (
-                                pathNum === 0 ||
-                                pathNum === tempPaths.length - 1
-                            )
-                                b[tempPaths[pathNum][0]][
-                                    tempPaths[pathNum][1]
-                                ] = doorChar;
-                            else
-                                b[tempPaths[pathNum][0]][
-                                    tempPaths[pathNum][1]
-                                ] = pathChar;
-                        }
+                        placePaths(tempPaths);
 
                         lastValidRoom = tempRoom;
                         lastEntranceDir = newEntranceDir;
+                    } else {
+                        resetPaths(tempPaths); //remove temp paths on fail
                     }
+                } else {
+                    resetPaths(tempPaths);
                 }
             }
 
@@ -203,30 +191,28 @@ function generateBoard() {
 
     board = b;
 
-    function isRoomValid(r, futurePaths) {
+    function isRoomValid(r, entrancePos) {
         for (let y = r[0][0]; y <= r[1][0]; y++) {
             for (let x = r[0][1]; x <= r[1][1]; x++) {
                 if (
-                    y === r[0][0] ||
-                    y === r[1][0] ||
-                    x === r[0][1] ||
-                    x === r[1][1]
-                ) {
-                    if (
-                        y < 0 ||
-                        y > defaults.colSize ||
-                        x < 0 ||
-                        x > defaults.rowSize
-                    )
-                        return false;
+                    y < 0 ||
+                    y > defaults.colSize ||
+                    x < 0 ||
+                    x > defaults.rowSize
+                )
+                    return false;
+                if (y !== entrancePos[0] || x !== entrancePos[1])
                     if (b[y][x] !== blankChar) return false;
-                    futurePaths.forEach((path) => {
-                        if (path[0] === y && path[1] === x) return false;
-                    });
-                }
             }
         }
         return true;
+    }
+
+    function resetPaths(paths) {
+        paths.forEach((arrPos, index) => {
+            if (index > 0) b[arrPos[0]][arrPos[1]] = blankChar;
+            else b[arrPos[0]][arrPos[1]] = wallChar;
+        });
     }
 
     function placeRoom(r) {
@@ -243,6 +229,14 @@ function generateBoard() {
                     b[y][x] = floorChar;
                 }
             }
+        }
+    }
+
+    function placePaths(paths) {
+        for (let pathNum = 0; pathNum < paths.length; pathNum++) {
+            if (pathNum === 0 || pathNum === paths.length - 1)
+                b[paths[pathNum][0]][paths[pathNum][1]] = doorChar;
+            else b[paths[pathNum][0]][paths[pathNum][1]] = pathChar;
         }
     }
 
@@ -313,10 +307,11 @@ function drawBoard() {
             if (board[y][x] === wallChar) txt = "🔲";
             if (board[y][x] === playerChar) txt = "🤴";
             //testing emoji
-
+            /*
             if (board[y][x] === pathChar) txt = "🌉";
             if (board[y][x] === floorChar) txt = "⬛";
             if (board[y][x] === doorChar) txt = "🚪";
+            */
 
             if (txt !== "")
                 ctx.fillText(
