@@ -1,0 +1,12 @@
+body {
+    display: flex;
+    align-items: left;
+    flex-direction: column;
+    font-family: monospace;
+    background-color: #c2cfd3;
+}
+
+#canvas {
+    margin-bottom: 10px;
+    display: block;
+}
