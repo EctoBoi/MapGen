@@ -6,6 +6,7 @@ body {
     justify-content: center; /* Center vertically */
     font-family: monospace;
     background-color: #c2cfd3;
+    margin: 0;
 }
 
 #canvas {
