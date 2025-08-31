@@ -1,6 +1,6 @@
 const defaults = {};
-defaults.rowSize = 60;
-defaults.colSize = 60;
+defaults.rowSize = 45;
+defaults.colSize = 45;
 defaults.mapCenter = [
     Math.floor(defaults.colSize / 2),
     Math.floor(defaults.rowSize / 2),
@@ -25,11 +25,110 @@ rowSize = defaults.rowSize;
 colSize = defaults.colSize;
 
 playerPos = defaults.playerPos;
+let lastWalkedChar = floorChar;
 
 let board = [];
+let gameState = 1;
+let gameTick = 0;
+let heldDir = [false, false, false, false];
 
 generateBoard();
 drawBoard();
+updateBoard();
+
+tick();
+
+function tick() {
+    if (gameTick % 1 === 0) {
+        if (heldDir[0]) handleStep(playerPos, [playerPos[0] - 1, playerPos[1]]);
+        else if (heldDir[1])
+            handleStep(playerPos, [playerPos[0], playerPos[1] + 1]);
+        else if (heldDir[2])
+            handleStep(playerPos, [playerPos[0] + 1, playerPos[1]]);
+        else if (heldDir[3])
+            handleStep(playerPos, [playerPos[0], playerPos[1] - 1]);
+    }
+
+    drawBoard();
+
+    gameTick++;
+    if (gameState === 1) tickTimer = setTimeout(tick, 50);
+}
+
+function updateBoard() {
+    let b = board;
+
+    b[playerPos[0]][playerPos[1]] = playerChar;
+
+    board = b;
+}
+
+//controls
+document.addEventListener("keydown", function (event) {
+    if (event.key === "w") heldDir[0] = true;
+    if (event.key === "d") heldDir[1] = true;
+    if (event.key === "s") heldDir[2] = true;
+    if (event.key === "a") heldDir[3] = true;
+    if (event.key === "ArrowUp") {
+        event.preventDefault();
+        heldDir[0] = true;
+    }
+    if (event.key === "ArrowRight") {
+        event.preventDefault();
+        heldDir[1] = true;
+    }
+    if (event.key === "ArrowDown") {
+        event.preventDefault();
+        heldDir[2] = true;
+    }
+    if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        heldDir[3] = true;
+    }
+});
+document.addEventListener("keyup", function (event) {
+    if (event.key === "w") heldDir[0] = false;
+    if (event.key === "d") heldDir[1] = false;
+    if (event.key === "s") heldDir[2] = false;
+    if (event.key === "a") heldDir[3] = false;
+    if (event.key === "ArrowUp") {
+        event.preventDefault();
+        heldDir[0] = false;
+    }
+    if (event.key === "ArrowRight") {
+        event.preventDefault();
+        heldDir[1] = false;
+    }
+    if (event.key === "ArrowDown") {
+        event.preventDefault();
+        heldDir[2] = false;
+    }
+    if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        heldDir[3] = false;
+    }
+});
+
+function handleStep(currentPos, stepPos) {
+    if (board[stepPos[0]][stepPos[1]] === floorChar) {
+        board[currentPos[0]][currentPos[1]] = lastWalkedChar;
+        playerPos = stepPos;
+        lastWalkedChar = floorChar;
+        updateBoard();
+    }
+    if (board[stepPos[0]][stepPos[1]] === doorChar) {
+        board[currentPos[0]][currentPos[1]] = lastWalkedChar;
+        playerPos = stepPos;
+        lastWalkedChar = doorChar;
+        updateBoard();
+    }
+    if (board[stepPos[0]][stepPos[1]] === pathChar) {
+        board[currentPos[0]][currentPos[1]] = lastWalkedChar;
+        playerPos = stepPos;
+        lastWalkedChar = pathChar;
+        updateBoard();
+    }
+}
 
 function generateBoard() {
     let b = [];
@@ -69,7 +168,7 @@ function generateBoard() {
             let tempExitPos = pickExit(tempExitDir, lastValidRoom);
             let tempPaths = [];
 
-            let numOfPaths = getRandomInt(3, 7); //min 3
+            let numOfPaths = getRandomInt(4, 9); //min 3
             //create path
             for (let pathNum = 1; pathNum < numOfPaths; pathNum++) {
                 if (pathNum === 1) {
@@ -289,6 +388,8 @@ function getRandomInt(min, max) {
 }
 
 function drawBoard() {
+    boardHTML = "";
+
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = "black";
     ctx.font = "20px Arial";
@@ -306,8 +407,7 @@ function drawBoard() {
             let txt = "";
             if (board[y][x] === wallChar) txt = "🔲";
             if (board[y][x] === playerChar) txt = "🤴";
-            //testing emoji
-            /*
+            /* test emoji
             if (board[y][x] === pathChar) txt = "🌉";
             if (board[y][x] === floorChar) txt = "⬛";
             if (board[y][x] === doorChar) txt = "🚪";

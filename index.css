@@ -1,12 +1,19 @@
 body {
+    min-height: 100vh;
     display: flex;
-    align-items: left;
     flex-direction: column;
+    align-items: center; /* Center horizontally */
+    justify-content: center; /* Center vertically */
     font-family: monospace;
     background-color: #c2cfd3;
 }
 
 #canvas {
-    margin-bottom: 10px;
     display: block;
+    width: 95vmin; /* Responsive square */
+    height: 95vmin;
+    max-width: 100vw;
+    max-height: 100vh;
+    aspect-ratio: 1 / 1;
+    margin-bottom: 10px;
 }
